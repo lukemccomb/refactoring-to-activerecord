@@ -7,6 +7,7 @@ require "./lib/fish"
 class App < Sinatra::Application
   enable :sessions
   use Rack::Flash
+  I18n.enforce_available_locales = false
 
   def initialize
     super
@@ -30,11 +31,13 @@ class App < Sinatra::Application
   end
 
   post "/registrations" do
-    if validate_registration_params
-      User.create(username: params[:username], password: params[:password])
+      user = User.create(username: params[:username], password: params[:password])
+    if user.valid?
       flash[:notice] = "Thanks for registering"
       redirect "/"
     else
+      flash[:notice] = user.errors.full_messages.join
+      redirect "/register"
       erb :register
     end
   end
@@ -59,13 +62,8 @@ class App < Sinatra::Application
   end
 
   delete "/users/:id" do
-    delete_sql = <<-SQL
-    DELETE FROM users
-    WHERE id = #{params[:id]}
-    SQL
-
-    @database_connection.sql(delete_sql)
-
+    user = User.find(params[:id])
+    user.destroy
     redirect "/"
   end
 
@@ -74,7 +72,7 @@ class App < Sinatra::Application
   end
 
   get "/fish/:id" do
-    fish = @database_connection.sql("SELECT * FROM fish WHERE id = #{params[:id]}").first
+    fish = Fish.find(params[:id])
     erb :"fish/show", locals: {fish: fish}
   end
 
@@ -98,9 +96,6 @@ class App < Sinatra::Application
   private
 
   def validate_registration_params
-    if params[:username] != "" && params[:password].length > 3 && username_available?(params[:username])
-      return true
-    end
 
     error_messages = []
 
@@ -170,12 +165,7 @@ class App < Sinatra::Application
   end
 
   def authenticate_user
-    select_sql = <<-SQL
-    SELECT * FROM users
-    WHERE username = '#{params[:username]}' AND password = '#{params[:password]}'
-    SQL
-
-    @database_connection.sql(select_sql).first
+    User.find_by(username: params[:username], password: params[:password])
   end
 
   def current_user
