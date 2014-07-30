@@ -1,3 +1,4 @@
+
 feature "Logged in user" do
 
   def register_user(username, password)
