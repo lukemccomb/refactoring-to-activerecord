@@ -1,6 +1,7 @@
 require "sinatra"
 require "gschool_database_connection"
 require "rack-flash"
+require "./lib/user"
 
 class App < Sinatra::Application
   enable :sessions
@@ -184,12 +185,7 @@ class App < Sinatra::Application
 
   def current_user
     if session[:user_id]
-      select_sql = <<-SQL
-      SELECT * FROM users
-      WHERE id = #{session[:user_id]}
-      SQL
-
-      @database_connection.sql(select_sql).first
+      User.find(session[:user_id])
     else
       nil
     end
