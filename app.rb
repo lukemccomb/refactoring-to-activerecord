@@ -43,7 +43,7 @@ class App < Sinatra::Application
   end
 
   post "/sessions" do
-    if validate_authentication_params
+    if validate_authentication_params #Should my validations allow me to remove this logic?
       user = authenticate_user
 
       if user != nil
@@ -77,59 +77,60 @@ class App < Sinatra::Application
   end
 
   post "/fish" do
-    if validate_fish_params
-      Fish.create(name: params[:name], wikipedia_page: params[:wikipedia_page], user_id: current_user["id"])
+    fish = Fish.create(name: params[:name], wikipedia_page: params[:wikipedia_page], user_id: current_user["id"])
+    if fish.valid?
       flash[:notice] = "Fish Created"
       redirect "/"
     else
+      flash[:notice] = fish.errors.full_messages.join
       erb :"fish/new"
     end
   end
 
   private
 
-  def validate_registration_params
-
-    error_messages = []
-
-    if params[:username] == ""
-      error_messages.push("Username is required")
-    end
-
-    if !username_available?(params[:username])
-      error_messages.push("Username has already been taken")
-    end
-
-    if params[:password] == ""
-      error_messages.push("Password is required")
-    elsif params[:password].length < 4
-      error_messages.push("Password must be at least 4 characters")
-    end
-
-    flash[:notice] = error_messages.join(", ")
-
-    false
-  end
-
-  def validate_fish_params
-    if params[:name] != "" && params[:wikipedia_page] != ""
-      return true
-    end
-
-    error_messages = []
-
-    if params[:name] == ""
-      error_messages.push("Name is required")
-    end
-
-    if params[:wikipedia_page] == ""
-      error_messages.push("Wikipedia page is required")
-    end
-
-    flash[:notice] = error_messages.join(", ")
-
-    false
-  end
+  # def validate_registration_params
+  #
+  #   error_messages = []
+  #
+  #   if params[:username] == ""
+  #     error_messages.push("Username is required")
+  #   end
+  #
+  #   if !username_available?(params[:username])
+  #     error_messages.push("Username has already been taken")
+  #   end
+  #
+  #   if params[:password] == ""
+  #     error_messages.push("Password is required")
+  #   elsif params[:password].length < 4
+  #     error_messages.push("Password must be at least 4 characters")
+  #   end
+  #
+  #   flash[:notice] = error_messages.join(", ")
+  #
+  #   false
+  # end
+  #
+  # def validate_fish_params
+  #   if params[:name] != "" && params[:wikipedia_page] != ""
+  #     return true
+  #   end
+  #
+  #   error_messages = []
+  #
+  #   if params[:name] == ""
+  #     error_messages.push("Name is required")
+  #   end
+  #
+  #   if params[:wikipedia_page] == ""
+  #     error_messages.push("Wikipedia page is required")
+  #   end
+  #
+  #   flash[:notice] = error_messages.join(", ")
+  #
+  #   false
+  # end
 
   def validate_authentication_params
     if params[:username] != "" && params[:password] != ""
